@@ -1,0 +1,10 @@
+<library path="hw_interface">
+  <class name="hw_interface/WarriorbotHardware"
+    type="debict::mecanumbot::hardware::WarriorbotHardware"
+    base_class_type="hardware_interface::SystemInterface"
+  >
+    <description>
+      Hardware interface for warrior
+    </description>
+  </class>
+</library>

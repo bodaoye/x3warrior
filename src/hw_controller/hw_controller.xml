@@ -1,0 +1,10 @@
+<library path="hw_controller">
+  <class name="hw_controller/WarriorDriveController"
+    type="debict::mecanumbot::controller::WarriorDriveController"
+    base_class_type="controller_interface::ControllerInterface"
+  >
+    <description>
+      Drive controller for mecanumbot
+    </description>
+  </class>
+</library>
