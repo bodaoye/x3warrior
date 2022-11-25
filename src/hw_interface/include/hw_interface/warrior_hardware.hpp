@@ -38,7 +38,7 @@ namespace debict
             };
             enum
             {
-                PITCH,
+                PITCH = 0,
                 YAW,
                 ROLL
             };

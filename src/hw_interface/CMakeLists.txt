@@ -31,7 +31,7 @@ add_library(
   src/mecanumbot_serial_port.cpp
 )
 
-target_link_libraries (${PROJECT_NAME}  libcontrolcan.so)
+target_link_libraries (${PROJECT_NAME}  libcontrolcan_x86.so)
 target_include_directories(
   ${PROJECT_NAME}
   PRIVATE

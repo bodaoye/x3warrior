@@ -18,11 +18,12 @@ int main(int argc, char * argv[])
       if (!controller_manager_node->get_parameter("update_rate", update_rate)) {
         throw std::runtime_error("update_rate parameter not existing or empty");
       }
-      RCLCPP_INFO(controller_manager_node->get_logger(), "update rate is %d Hz", update_rate);
+      
 
       while (rclcpp::ok()) 
       {
         std::chrono::system_clock::time_point begin = std::chrono::system_clock::now();
+        RCLCPP_INFO(controller_manager_node->get_logger(), "update rate is %d Hz", update_rate);
         controller_manager_node->read();
         controller_manager_node->update();
         //RCLCPP_INFO(controller_manager_node->get_logger(), "update rate is %d Hz", update_rate);

@@ -90,8 +90,8 @@ controller_interface::return_type WarriorDriveController::update()
     // MecanumbotWheel::imu_data_.pitch =  pitch_angle_->get_angle();
     // MecanumbotWheel::imu_data_.yaw   = yaw_angle_->get_angle();
     // MecanumbotWheel::imu_data_.roll  = roll_ange_->get_angle();
-    std::cout << pitch_angle_->get_angle() << std::endl;
-     RCLCPP_INFO(get_node()->get_logger(), "%d",pitch_angle_->get_angle());
+//    std::cout << pitch_angle_->get_angle() << std::endl;
+//    RCLCPP_INFO(get_node()->get_logger(), "pitch_angle_->get_angle():%d",pitch_angle_->get_angle());
     // Calculate the wheel velocity
     // See: http://robotsforroboticists.com/drive-kinematics/
     const auto twist = (*velocity_command)->twist;

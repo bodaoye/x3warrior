@@ -22,7 +22,7 @@ VCI_CAN_OBJ rec[3000];//接收缓存，设为3000为佳。
 
 int q1,w1;
 int ind=0;
-
+std::vector<double> test;
 using namespace debict::mecanumbot::hardware;
 
 hardware_interface::return_type WarriorbotHardware::configure(const hardware_interface::HardwareInfo & system_info)
@@ -32,15 +32,24 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
     }
     serial_port_name_ = info_.hardware_parameters["serial_port"];
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Motor id not defined for join %s", serial_port_name_);
+    test.resize(5);
     motor_ids_.resize(info_.joints.size());
     imu_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     position_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_states_.push_back(1);
-    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "velocity_states_: %d", velocity_states_[0]);
-    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "velocity_states_: %d", velocity_states_[1]);
     velocity_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_commands_saved_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+
+    for (size_t i = 0; i < info_.joints.size(); i++) 
+    {
+        test[i] = 1.0;
+        RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "test: %d", test[i]);
+        velocity_states_[i] = 0.0f;
+        imu_[i] = 0.0f;
+        RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "velocity_states_: %d", velocity_states_[i]);
+        velocity_commands_[i] = 0.0f;
+    }
 
     for (hardware_interface::ComponentInfo & joint : info_.joints)
     {
@@ -130,8 +139,8 @@ hardware_interface::return_type WarriorbotHardware::start()
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), ">>USBCAN DEVICE NUM:%d...",num);  
 
     for (size_t i = 0; i < info_.joints.size(); i++) {
-        if (std::isnan(position_states_[i])) {
-            position_states_[i] = 0.0f;
+        if (std::isnan(imu_[i])) {
+            imu_[i] = 0.0f;
         }
         if (std::isnan(velocity_states_[i])) {
             velocity_states_[i] = 0.0f;
@@ -213,7 +222,7 @@ hardware_interface::return_type WarriorbotHardware::read()
 
     serial_port_->read_frames(frames);
     imu_[PITCH] = 1;
-    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "imu_data: %d", imu_[PITCH]);
+//    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "imu_data: %d", imu_[PITCH]);
     imu_[YAW] = 2;
     imu_[ROLL] = 3;
     
