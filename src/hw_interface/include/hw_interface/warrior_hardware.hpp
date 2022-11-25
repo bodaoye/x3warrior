@@ -44,10 +44,11 @@ namespace debict
             };
             typedef struct 
             {
-                std::vector<float> pitch;
-                std::vector<float> yaw;
-                std::vector<float> roll;
+                float pitch;
+                float yaw;
+                float roll;
             }imu_typedef;
+
             class WarriorbotHardware : public hardware_interface::BaseInterface<hardware_interface::SystemInterface>
             {
             public:
@@ -82,6 +83,7 @@ namespace debict
                 std::vector<double> velocity_commands_saved_;
                 /*imu*/
                 std::vector<double> imu_;
+                imu_typedef imu_raw_data;
                 std::shared_ptr<MecanumbotSerialPort> serial_port_;
                 std::string serial_port_name_;
 

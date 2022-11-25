@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
         std::chrono::system_clock::time_point begin = std::chrono::system_clock::now();
         controller_manager_node->read();
         controller_manager_node->update();
-//        RCLCPP_INFO(controller_manager_node->get_logger(), "update rate is %d Hz", update_rate);
+        //RCLCPP_INFO(controller_manager_node->get_logger(), "update rate is %d Hz", update_rate);
         controller_manager_node->write();
         std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
         std::this_thread::sleep_for(

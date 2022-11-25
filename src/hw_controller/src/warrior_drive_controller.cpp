@@ -2,7 +2,7 @@
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include <rclcpp/rclcpp.hpp>
-
+#include <iostream>
 #include "hw_controller/warrior_drive_controller.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
@@ -85,6 +85,13 @@ controller_interface::return_type WarriorDriveController::update()
         return controller_interface::return_type::OK;
     }
 
+
+    /*get new imu date*/
+    // MecanumbotWheel::imu_data_.pitch =  pitch_angle_->get_angle();
+    // MecanumbotWheel::imu_data_.yaw   = yaw_angle_->get_angle();
+    // MecanumbotWheel::imu_data_.roll  = roll_ange_->get_angle();
+    std::cout << pitch_angle_->get_angle() << std::endl;
+     RCLCPP_INFO(get_node()->get_logger(), "%d",pitch_angle_->get_angle());
     // Calculate the wheel velocity
     // See: http://robotsforroboticists.com/drive-kinematics/
     const auto twist = (*velocity_command)->twist;
@@ -92,10 +99,10 @@ controller_interface::return_type WarriorDriveController::update()
     double fr_wheel_velocity = (1 / wheel_radius_) * (twist.linear.x + twist.linear.y + (wheel_separation_width_ + wheel_separation_length_) * twist.angular.z);
     double rl_wheel_velocity = (1 / wheel_radius_) * (twist.linear.x + twist.linear.y - (wheel_separation_width_ + wheel_separation_length_) * twist.angular.z);
     double rr_wheel_velocity = (1 / wheel_radius_) * (twist.linear.x - twist.linear.y + (wheel_separation_width_ + wheel_separation_length_) * twist.angular.z);
-
-    fl_wheel_->set_velocity(fl_wheel_velocity);
-    fr_wheel_->set_velocity(fr_wheel_velocity);
-    rl_wheel_->set_velocity(rl_wheel_velocity);
+    /*update new commond date*/
+    pitch_angle_->set_velocity(fl_wheel_velocity);
+    yaw_angle_->set_velocity(fr_wheel_velocity);
+    roll_ange_->set_velocity(rl_wheel_velocity);
     rr_wheel_->set_velocity(rr_wheel_velocity);
 
     return controller_interface::return_type::OK;
@@ -156,11 +163,12 @@ CallbackReturn WarriorDriveController::on_configure(const rclcpp_lifecycle::Stat
 CallbackReturn WarriorDriveController::on_activate(const rclcpp_lifecycle::State &)
 {
     // Initialize the wheels
-    fl_wheel_ = get_wheel(fl_wheel_joint_name_);
-    fr_wheel_ = get_wheel(fr_wheel_joint_name_);
-    rl_wheel_ = get_wheel(rl_wheel_joint_name_);
+    /* different states are distinguished here */
+    pitch_angle_ = get_wheel(fl_wheel_joint_name_);
+    yaw_angle_ = get_wheel(fr_wheel_joint_name_);
+    roll_ange_ = get_wheel(rl_wheel_joint_name_);
     rr_wheel_ = get_wheel(rr_wheel_joint_name_);
-    if (!fl_wheel_ || !fr_wheel_ || !rl_wheel_ || !rr_wheel_) {
+    if (!pitch_angle_ || !yaw_angle_ || !roll_ange_ || !rr_wheel_) {
         return CallbackReturn::ERROR;
     }
     
@@ -175,9 +183,9 @@ CallbackReturn WarriorDriveController::on_deactivate(const rclcpp_lifecycle::Sta
 CallbackReturn WarriorDriveController::on_cleanup(const rclcpp_lifecycle::State &)
 {
     // Uninitialize the wheels
-    fl_wheel_.reset();
-    fr_wheel_.reset();
-    rl_wheel_.reset();
+    pitch_angle_.reset();
+    yaw_angle_.reset();
+    roll_ange_.reset();
     rr_wheel_.reset();
 
     return CallbackReturn::SUCCESS;
@@ -196,11 +204,11 @@ CallbackReturn WarriorDriveController::on_shutdown(const rclcpp_lifecycle::State
 std::shared_ptr<MecanumbotWheel> WarriorDriveController::get_wheel(const std::string & wheel_joint_name)
 {
     // Lookup the position state interface
-    const auto position_state = std::find_if(state_interfaces_.cbegin(), state_interfaces_.cend(), [&wheel_joint_name](const hardware_interface::LoanedStateInterface & interface)
+    const auto angle_state = std::find_if(state_interfaces_.cbegin(), state_interfaces_.cend(), [&wheel_joint_name](const hardware_interface::LoanedStateInterface & interface)
     {
         return interface.get_name() == wheel_joint_name && interface.get_interface_name() == HW_IF_ANGLE;
     });
-    if (position_state == state_interfaces_.cend()) {
+    if (angle_state == state_interfaces_.cend()) {
         RCLCPP_ERROR(get_node()->get_logger(), "%s position state interface not found", wheel_joint_name.c_str());
         return nullptr;
     }
@@ -227,7 +235,7 @@ std::shared_ptr<MecanumbotWheel> WarriorDriveController::get_wheel(const std::st
 
     // Create the wheel instance
     return std::make_shared<MecanumbotWheel>(
-        std::ref(*position_state),
+        std::ref(*angle_state),
         std::ref(*velocity_state),
         std::ref(*velocity_command)
         );

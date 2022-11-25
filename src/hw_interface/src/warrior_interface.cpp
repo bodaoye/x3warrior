@@ -36,6 +36,9 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
     imu_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     position_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+    velocity_states_.push_back(1);
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "velocity_states_: %d", velocity_states_[0]);
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "velocity_states_: %d", velocity_states_[1]);
     velocity_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_commands_saved_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
@@ -79,13 +82,10 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
 /* read buffer -> strcut imu_ -> imu_ -> state_interface*/
 std::vector<hardware_interface::StateInterface> WarriorbotHardware::export_state_interfaces()
 {
-    imu_[PITCH] = 1;
-    imu_[YAW] = 2;
-    imu_[ROLL] = 3;
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "export_state_interfaces");
+    
     /* RM get date from the interface */
     std::vector<hardware_interface::StateInterface> state_interfaces;
-    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle pitch state interface: %s", info_.joints[0].name.c_str());
     state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, HW_IF_ANGLE, &imu_[PITCH]));
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle roll state interface: %s", info_.joints[1].name.c_str());
     state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[1].name, HW_IF_ANGLE, &imu_[YAW]));
@@ -93,28 +93,15 @@ std::vector<hardware_interface::StateInterface> WarriorbotHardware::export_state
     state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[2].name, HW_IF_ANGLE, &imu_[ROLL]));
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle pitch state interface: %s", info_.joints[3].name.c_str());
     state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[3].name, HW_IF_ANGLE, &imu_[PITCH]));
-    
-    /*
-    for (size_t i = 0; i < info_.joints.size(); i++) 
-    {
-        RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding position state interface: %s", info_.joints[i].name.c_str());
-        state_interfaces.emplace_back(
-            hardware_interface::StateInterface(
-                info_.joints[i].name, hardware_interface::HW_IF_POSITION, &position_states_[i]
-            )
-        );
-    }
-    for (size_t i = 0; i < info_.joints.size(); i++) 
-    {
-        RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding velocity state interface: %s", info_.joints[i].name.c_str());
+
+    for (size_t i = 0; i < info_.joints.size(); i++) {
+        RCLCPP_INFO(rclcpp::get_logger("MecanumbotHardware"), "Adding velocity state interface: %s", info_.joints[i].name.c_str());
         state_interfaces.emplace_back(
             hardware_interface::StateInterface(
                 info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &velocity_states_[i]
             )
         );
-    }
-    */
-
+    }   
     return state_interfaces;
 }
 
@@ -225,14 +212,15 @@ hardware_interface::return_type WarriorbotHardware::read()
     std::vector<SerialHdlcFrame> frames;
 
     serial_port_->read_frames(frames);
+    imu_[PITCH] = 1;
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "imu_data: %d", imu_[PITCH]);
+    imu_[YAW] = 2;
+    imu_[ROLL] = 3;
+    
     if((reclen=VCI_Receive(VCI_USBCAN2,0,ind,rec,3000,100))>0)//调用接收函数，如果有数据，进行数据处理显示。
     {
         for(q1=0;q1<reclen;q1++)
         {
-            position_states_[0] = (rec[q1].Data[0]<<8)|rec[q1].Data[1];
-            position_states_[1] = (rec[q1].Data[2]<<8)|rec[q1].Data[3];
-            position_states_[2] = (rec[q1].Data[4]<<8)|rec[q1].Data[5];
-            position_states_[3] = (rec[q1].Data[6]<<8)|rec[q1].Data[7];
             // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Index:%04d  ",count);count++;
             // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "CAN%d RX ID:0x%08X", ind+1, rec[q1].ID);
             // if(rec[q1].ExternFlag==0) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Standard ");//帧格式：标准帧

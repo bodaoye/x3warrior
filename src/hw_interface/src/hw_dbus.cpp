@@ -28,7 +28,6 @@ void DBus::init(const char* serial)
   {
     std::cout<<"[rt_dbus] Unable to open dbus\n"<<std::endl;
   }
-
   // Even parity(8E1):
   options.c_cflag &= ~CBAUD;
   options.c_cflag |= BOTHER;
