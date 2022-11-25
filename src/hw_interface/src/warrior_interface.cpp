@@ -58,7 +58,7 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
             RCLCPP_FATAL(rclcpp::get_logger("WarriorbotHardware"), "Invalid number of state interfaces (expected: 2)");
             return hardware_interface::return_type::ERROR;
         }
-        if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
+        if (joint.state_interfaces[0].name != HW_IF_ANGLE) {
             RCLCPP_FATAL(rclcpp::get_logger("WarriorbotHardware"), "Invalid joint state interface 0 type (expected: position)");
             return hardware_interface::return_type::ERROR;
         }
@@ -76,12 +76,22 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
     status_ = hardware_interface::status::CONFIGURED;
     return hardware_interface::return_type::OK;
 }
-
+/* read buffer -> strcut imu_ -> imu_ -> state_interface*/
 std::vector<hardware_interface::StateInterface> WarriorbotHardware::export_state_interfaces()
 {
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "export_state_interfaces");
-
+    /* RM get date from the interface */
     std::vector<hardware_interface::StateInterface> state_interfaces;
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle pitch state interface: %s", info_.joints[0].name.c_str());
+    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, HW_IF_ANGLE, &imu_[PITCH]));
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle roll state interface: %s", info_.joints[1].name.c_str());
+    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[1].name, HW_IF_ANGLE, &imu_[YAW]));
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle yaw state interface: %s", info_.joints[2].name.c_str());
+    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[2].name, HW_IF_ANGLE, &imu_[ROLL]));
+    RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding angle pitch state interface: %s", info_.joints[3].name.c_str());
+    state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[3].name, HW_IF_ANGLE, &imu_[PITCH]));
+    
+    /*
     for (size_t i = 0; i < info_.joints.size(); i++) 
     {
         RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Adding position state interface: %s", info_.joints[i].name.c_str());
@@ -100,6 +110,8 @@ std::vector<hardware_interface::StateInterface> WarriorbotHardware::export_state
             )
         );
     }
+    */
+
     return state_interfaces;
 }
 
@@ -210,52 +222,30 @@ hardware_interface::return_type WarriorbotHardware::read()
     std::vector<SerialHdlcFrame> frames;
 
     serial_port_->read_frames(frames);
-		if((reclen=VCI_Receive(VCI_USBCAN2,0,ind,rec,3000,100))>0)//调用接收函数，如果有数据，进行数据处理显示。
-		{
-			for(q1=0;q1<reclen;q1++)
-			{
-                position_states_[0] = (rec[q1].Data[0]<<8)|rec[q1].Data[1];
-                position_states_[1] = (rec[q1].Data[2]<<8)|rec[q1].Data[3];
-                position_states_[2] = (rec[q1].Data[4]<<8)|rec[q1].Data[5];
-                position_states_[3] = (rec[q1].Data[6]<<8)|rec[q1].Data[7];
-                // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Index:%04d  ",count);count++;
-                // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "CAN%d RX ID:0x%08X", ind+1, rec[q1].ID);
-				// if(rec[q1].ExternFlag==0) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Standard ");//帧格式：标准帧
-				// if(rec[q1].ExternFlag==1) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Extend   ");//帧格式：扩展帧
-				// if(rec[q1].RemoteFlag==0) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Data   ");//帧类型：数据帧
-				// if(rec[q1].RemoteFlag==1) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Remote ");//帧类型：远程帧
-                // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"),"DLC:0x%02X",rec[q1].DataLen);//帧长度
-                // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," data:0x");//帧长度
-				// for(w1 = 0; w1 < rec[q1].DataLen; w1++)
-				// {
-                //     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," %02X", rec[q1].Data[w1]);//帧长度
-				// }
-                // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," TimeStamp:0x%08X",rec[q1].TimeStamp);//时间标识。
-			}
-		}
-		ind=!ind;//变换通道号，以便下次读取另一通道，交替读取。	
-
-
-    /*
-    for (size_t i = 0; i < frames.size(); i++) {
-        char buff[100];
-        int offset = 0;
-        for (size_t l = 0; l < frames[i].length; l++) {
-            sprintf(&buff[offset], "%02X ", frames[i].data[l]);
-            offset += 3;
+    if((reclen=VCI_Receive(VCI_USBCAN2,0,ind,rec,3000,100))>0)//调用接收函数，如果有数据，进行数据处理显示。
+    {
+        for(q1=0;q1<reclen;q1++)
+        {
+            position_states_[0] = (rec[q1].Data[0]<<8)|rec[q1].Data[1];
+            position_states_[1] = (rec[q1].Data[2]<<8)|rec[q1].Data[3];
+            position_states_[2] = (rec[q1].Data[4]<<8)|rec[q1].Data[5];
+            position_states_[3] = (rec[q1].Data[6]<<8)|rec[q1].Data[7];
+            // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Index:%04d  ",count);count++;
+            // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "CAN%d RX ID:0x%08X", ind+1, rec[q1].ID);
+            // if(rec[q1].ExternFlag==0) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Standard ");//帧格式：标准帧
+            // if(rec[q1].ExternFlag==1) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Extend   ");//帧格式：扩展帧
+            // if(rec[q1].RemoteFlag==0) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Data   ");//帧类型：数据帧
+            // if(rec[q1].RemoteFlag==1) RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," Remote ");//帧类型：远程帧
+            // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"),"DLC:0x%02X",rec[q1].DataLen);//帧长度
+            // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," data:0x");//帧长度
+            // for(w1 = 0; w1 < rec[q1].DataLen; w1++)
+            // {
+            //     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," %02X", rec[q1].Data[w1]);//帧长度
+            // }
+            // RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware")," TimeStamp:0x%08X",rec[q1].TimeStamp);//时间标识。
         }
-        RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Frame received: %s", buff);
     }
-    */
-
-    for (size_t i = 0; i < info_.joints.size(); i++) {
-        position_states_[i] ++;
-        if(position_states_[i]>=256)
-            position_states_[i] = 256;
-        //RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Got position %.5f, velocity %.5f for joint %d!", position_states_[i], velocity_states_[i], i);
-    }
-    
-    position_states_[0] = 1.1f;
+    ind=!ind;//变换通道号，以便下次读取另一通道，交替读取。	
     return hardware_interface::return_type::OK;
 }
 

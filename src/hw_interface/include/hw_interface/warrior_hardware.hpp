@@ -24,6 +24,7 @@ namespace debict
     {
         namespace hardware
         {
+            constexpr char HW_IF_ANGLE[] = "angle";
             enum class DeviceCommand : uint8_t {
                 MotorSetDuty = 0x01,
                 MotorBrake   = 0x02,
@@ -35,7 +36,18 @@ namespace debict
                 Forward = 1,
                 Reverse = 2,
             };
-            
+            enum
+            {
+                PITCH,
+                YAW,
+                ROLL
+            };
+            typedef struct 
+            {
+                std::vector<float> pitch;
+                std::vector<float> yaw;
+                std::vector<float> roll;
+            }imu_typedef;
             class WarriorbotHardware : public hardware_interface::BaseInterface<hardware_interface::SystemInterface>
             {
             public:
@@ -68,6 +80,8 @@ namespace debict
                 std::vector<double> velocity_states_;
                 std::vector<double> velocity_commands_;
                 std::vector<double> velocity_commands_saved_;
+                /*imu*/
+                std::vector<double> imu_;
                 std::shared_ptr<MecanumbotSerialPort> serial_port_;
                 std::string serial_port_name_;
 

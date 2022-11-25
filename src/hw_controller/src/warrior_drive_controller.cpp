@@ -37,13 +37,13 @@ controller_interface::InterfaceConfiguration WarriorDriveController::state_inter
     controller_interface::InterfaceConfiguration state_interfaces_config;
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-    state_interfaces_config.names.push_back(fl_wheel_joint_name_ + "/" + hardware_interface::HW_IF_POSITION);
+    state_interfaces_config.names.push_back(fl_wheel_joint_name_ + "/" + HW_IF_ANGLE);
     state_interfaces_config.names.push_back(fl_wheel_joint_name_ + "/" + hardware_interface::HW_IF_VELOCITY);
-    state_interfaces_config.names.push_back(fr_wheel_joint_name_ + "/" + hardware_interface::HW_IF_POSITION);
+    state_interfaces_config.names.push_back(fr_wheel_joint_name_ + "/" + HW_IF_ANGLE);
     state_interfaces_config.names.push_back(fr_wheel_joint_name_ + "/" + hardware_interface::HW_IF_VELOCITY);
-    state_interfaces_config.names.push_back(rl_wheel_joint_name_ + "/" + hardware_interface::HW_IF_POSITION);
+    state_interfaces_config.names.push_back(rl_wheel_joint_name_ + "/" + HW_IF_ANGLE);
     state_interfaces_config.names.push_back(rl_wheel_joint_name_ + "/" + hardware_interface::HW_IF_VELOCITY);
-    state_interfaces_config.names.push_back(rr_wheel_joint_name_ + "/" + hardware_interface::HW_IF_POSITION);
+    state_interfaces_config.names.push_back(rr_wheel_joint_name_ + "/" + HW_IF_ANGLE);
     state_interfaces_config.names.push_back(rr_wheel_joint_name_ + "/" + hardware_interface::HW_IF_VELOCITY);
 
     return state_interfaces_config;
@@ -198,7 +198,7 @@ std::shared_ptr<MecanumbotWheel> WarriorDriveController::get_wheel(const std::st
     // Lookup the position state interface
     const auto position_state = std::find_if(state_interfaces_.cbegin(), state_interfaces_.cend(), [&wheel_joint_name](const hardware_interface::LoanedStateInterface & interface)
     {
-        return interface.get_name() == wheel_joint_name && interface.get_interface_name() == hardware_interface::HW_IF_POSITION;
+        return interface.get_name() == wheel_joint_name && interface.get_interface_name() == HW_IF_ANGLE;
     });
     if (position_state == state_interfaces_.cend()) {
         RCLCPP_ERROR(get_node()->get_logger(), "%s position state interface not found", wheel_joint_name.c_str());

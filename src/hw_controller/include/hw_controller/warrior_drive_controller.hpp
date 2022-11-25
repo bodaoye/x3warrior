@@ -20,7 +20,7 @@ namespace debict
         {
             using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
             using Twist = geometry_msgs::msg::TwistStamped;
-
+            constexpr char HW_IF_ANGLE[] = "angle";
             class WarriorDriveController
                 : public controller_interface::ControllerInterface
             {
