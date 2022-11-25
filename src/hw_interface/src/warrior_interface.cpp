@@ -30,10 +30,10 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
     if (configure_default(system_info) != hardware_interface::return_type::OK) {
         return hardware_interface::return_type::ERROR;
     }
-
     serial_port_name_ = info_.hardware_parameters["serial_port"];
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "Motor id not defined for join %s", serial_port_name_);
     motor_ids_.resize(info_.joints.size());
+    imu_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     position_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     velocity_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
@@ -72,13 +72,16 @@ hardware_interface::return_type WarriorbotHardware::configure(const hardware_int
         motor_ids_[i] = (uint8_t)std::stoi(info_.joints[i].parameters["motor_id"]);
         RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "%s mapped to motor %d", info_.joints[i].name.c_str(), motor_ids_[i]);
     }
-
+    
     status_ = hardware_interface::status::CONFIGURED;
     return hardware_interface::return_type::OK;
 }
 /* read buffer -> strcut imu_ -> imu_ -> state_interface*/
 std::vector<hardware_interface::StateInterface> WarriorbotHardware::export_state_interfaces()
 {
+    imu_[PITCH] = 1;
+    imu_[YAW] = 2;
+    imu_[ROLL] = 3;
     RCLCPP_INFO(rclcpp::get_logger("WarriorbotHardware"), "export_state_interfaces");
     /* RM get date from the interface */
     std::vector<hardware_interface::StateInterface> state_interfaces;
